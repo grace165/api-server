@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000
 //set up default route ('') and return 'Hello World!' in the response 
 //when requests are received
 app.get('', (req, res) => {
-    res.send('Hello World! BOING!')
+    res.send('Hello World! BOING-OING!')
 })
 
 //configure the server to listen for connections on the port
