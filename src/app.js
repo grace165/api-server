@@ -2,12 +2,11 @@ require('dotenv').config({ debug: true });
 
 const express = require('express') 
 require('./db/mongoose')
-
 const cors = require('cors'); 
-const userRouter = require('./routers/user') 
-//const studygroupRouter = require('./routers/studygroup') 
-//const notificationRouter = require('./routers/notification') 
 
+const userRouter = require('./routers/user') 
+const studygroupRouter = require('./routers/studygroup') 
+//const notificationRouter = require('./routers/notification') 
 
 const app = express() 
 
@@ -20,7 +19,7 @@ app.use(function (req, res, next) {
 
 app.use(express.json()) 
 app.use(userRouter)
-//app.use(studygroupRouter) 
+app.use(studygroupRouter) 
 //app.use(notificationRouter) 
 
 
