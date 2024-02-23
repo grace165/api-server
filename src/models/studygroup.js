@@ -26,7 +26,7 @@ const studyGroupSchema = new Schema({
         }
     },
     meeting_times: [{
-        day: { type: String, enum: DAYSOFWEEK, required: true },
+        day: { type: [String], enum: DAYSOFWEEK, required: true },
         time: {
             type: String,
             validate(value) {
