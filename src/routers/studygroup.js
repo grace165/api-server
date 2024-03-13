@@ -1,5 +1,6 @@
 const express = require('express')
 const auth = require('../middleware/auth')
+const mongoose = require('mongoose')
 
 const StudyGroup = require('../models/studygroup')
 
@@ -39,9 +40,10 @@ router.get('/studygroups', auth, async (req, res) => {
     let filter = {
         $and: []
     }
-    
+
     const projection = {
-        name: 1, 
+        name: 1,
+        owner: 1,
         is_public: 1,
         max_participants: 1,
         description: 1,
@@ -56,23 +58,23 @@ router.get('/studygroups', auth, async (req, res) => {
 
     filter.$and.push({
         $or: [
-            { is_public: true},
-            { owner: req.user._id}
+            { is_public: true },
+            { owner: req.user._id }
         ]
     })
 
     if (req.query.hasOwnProperty('ongoing')) {
         const now = new Date()
         if (req.query.ongoing === 'true') {
-            filter.$and.push({start_date: {$lte: now}})
-            filter.$and.push({end_date: {$gt: now}})
+            filter.$and.push({ start_date: { $lte: now } })
+            filter.$and.push({ end_date: { $gt: now } })
         }
-        else{
+        else {
             filter.$and.push(
                 {
                     $or: [
-                        {start_date: {$gt: now}}, //OR
-                        {end_date: {$lt: now}}
+                        { start_date: { $gt: now } }, //OR
+                        { end_date: { $lt: now } }
                     ]
                 }
             )
@@ -105,14 +107,82 @@ router.get('/studygroups', auth, async (req, res) => {
 
     console.log(JSON.stringify(options))
 
-    try{
+    try {
         const results = await StudyGroup.find(filter, projection, options)
         res.send(results)
     }
-    catch(e) {
+    catch (e) {
         console.log(e)
         res.status(500).send()
     }
 })
+
+router.patch('/studygroup/:id', auth, async (req, res) => {
+    const user = req.user
+    const studyGroupID = req.params.id
+    const mods = req.body
+
+    let studygroup = undefined
+
+    if (!mongoose.isValidObjectId(studyGroupID)) {
+        res.status(400).send("Invalid object id")
+        return
+    }
+
+    try {
+        studygroup = await StudyGroup.findById(studyGroupID)
+
+        if (!studygroup) {
+            res.status(400).send('Invalid study group id')
+            return
+        }
+    }
+    catch (e) {
+        res.status(500).send('Error finding study group')
+        return
+    }
+
+    // verity user is owner
+    if (!studygroup.owner.equals(user._id)) {
+        res.status(401).send("Server is down for maintenance")
+        return
+    }
+
+
+    const props = Object.keys(mods)
+    const modifiable = [
+        "name",
+        "is_public",
+        "max_participants",
+        "start_date",
+        "end_date",
+        "meeting_times",
+        "description",
+        "school",
+        "course_number"
+    ]
+
+    // check that all the props are modifable
+    const isValid = props.every((prop) => modifiable.includes(prop))
+
+    if (!isValid) {
+        res.status(400).send("One or more invalid properties")
+        return
+    }
+
+    try {
+        // set new values
+        props.forEach((prop) => studygroup[prop] = mods[prop])
+        await studygroup.save()
+
+        res.send(studygroup)
+    }
+    catch (e) {
+        console.log(e)
+        res.status(500).send("Error saving study group")
+    }
+})
+
+
 
 module.exports = router
