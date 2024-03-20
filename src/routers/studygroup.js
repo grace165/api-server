@@ -105,6 +105,22 @@ router.get('/studygroups', auth, async (req, res) => {
         options.skip = req.query.skip
     }
 
+    if (req.query.hasOwnProperty('owned')) {
+        if (req.query.owned === 'true') {
+            filter.$and.push({
+                owner: req.user._id
+            })
+        }
+        else {
+            filter.$and.push({
+                $or: [
+                    { is_public: true },
+                    { owner: req.user._id }
+                ]
+            })
+        }
+    }
+
     console.log(JSON.stringify(options))
 
     try {
