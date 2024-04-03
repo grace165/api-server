@@ -41,6 +41,8 @@ router.get('/studygroups', auth, async (req, res) => {
         $and: []
     }
 
+    user = req.user._id
+
     const projection = {
         name: 1,
         owner: 1,
@@ -51,7 +53,8 @@ router.get('/studygroups', auth, async (req, res) => {
         end_date: 1,
         meeting_times: 1,
         school: 1,
-        course_number: 1
+        course_number: 1,
+        participants: 1
     }
 
     const options = {}
@@ -106,9 +109,18 @@ router.get('/studygroups', auth, async (req, res) => {
     }
 
     if (req.query.hasOwnProperty('owned')) {
-        if (req.query.owned === 'true') {
+        if (req.query.owned === 'self') {
             filter.$and.push({
                 owner: req.user._id
+            })
+        }
+        if (req.query.owned === ('member')) {
+            filter.$and.push({
+                //{req.user._id: {$in: participants}}
+                //user : {
+                //    $in: participants
+                //}
+                participants: req.user._id 
             })
         }
         else {
@@ -199,6 +211,95 @@ router.patch('/studygroup/:id', auth, async (req, res) => {
     }
 })
 
+router.delete('/studygroup/:id', auth, async (req, res) => {
+    const user = req.user
+    const studyGroupId = req.params.id
+
+    let studyGroup = null
+
+    if (!mongoose.isValidObjectId(studyGroupId)) {
+        res.status(400).send("Invalid request")
+        return
+    }
+
+    try {
+        studyGroup = await StudyGroup.findById(studyGroupId)
+
+        if (!studyGroup) {
+            res.status(400).send("Study Group not found.")
+            return
+        }
+
+        //verify user is owner
+        if (!studyGroup.owner.equals(user._id)) {
+            res.status(401).send()
+            return
+        }
+
+        await studyGroup.deleteOne()
+
+        res.send()
+    }
+    catch (e) {
+        console.log(e)
+        res.status(500).send()
+    }
+})
+
+router.patch('/studygroup/:id/participants', auth, async (req, res) => {
+    const user = req.user
+    const studyGroupID = req.params.id
+
+    let studygroup = undefined
+
+    if (!mongoose.isValidObjectId(studyGroupID)) {
+        res.status(400).send("Invalid object id")
+        return
+    }
+
+    try {
+        studygroup = await
+            StudyGroup.findById(studyGroupID)
+
+        if (!studygroup) {
+            res.status(400).send('Invalid study group id')
+            return
+        }
+    }
+    catch (e) {
+        res.status(500).send('Error finding study group')
+        return
+    }
+
+    try {
+        const participantsArr = studygroup.participants
+
+        if (req.query.hasOwnProperty('add')) {
+            // check if there is room in the studygroup
+            if (studygroup.participants.length >= studygroup.max_participants) {
+                res.status(400).send("No room in studygroup")
+                return
+            }
+
+            participantsArr.push(user._id)
+        }
+
+        if (req.query.hasOwnProperty('remove')) {
+            let i = participantsArr.indexOf(user._id)
+            participantsArr.splice(i)
+        }
+
+        studygroup.participants = participantsArr
+
+        await studygroup.save()
+
+        res.send(studygroup)
+    }
+    catch (e) {
+        console.log(e)
+        res.status(500).send("Error saving study group")
+    }
+})
 
 
 module.exports = router
