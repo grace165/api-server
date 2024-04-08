@@ -1,5 +1,6 @@
 const express = require('express') 
-const router = express.Router() 
+const router = express.Router()
+const auth = require('../middleware/auth') 
 
 router.post('/notification', (req, res) => { 
     console.log(req.body) 
