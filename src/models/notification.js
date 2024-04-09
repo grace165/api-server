@@ -1,16 +1,18 @@
 const mongoose = require('mongoose') 
 const NOTIFICATIONTYPE = require('./notificationtype')
+const ObjectId = require('mongodb').ObjectId;
+
 
 const Schema = mongoose.Schema
 
 const notificationSchema = new Schema({ 
     sender: {
-        type: Schema.Types.ObjectId,
+        type: ObjectId,
         ref: 'User',
         required: true
     },
     receiver: {
-        type: Schema.Types.ObjectId,
+        type: ObjectId,
         ref: 'User',
         required: true
     },
@@ -27,13 +29,13 @@ const notificationSchema = new Schema({
         default: false, 
         required: true
     },
-    notificationType: {
+    notification_type: {
         type: String, 
         enum: NOTIFICATIONTYPE, 
         required: true
     },
-    study: {
-        type: Schema.Types.ObjectId,
+    studyGroupId: {
+        type: ObjectId,
         ref: 'StudyGroup',
         required: false
     }

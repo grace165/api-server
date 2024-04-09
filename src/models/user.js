@@ -1,8 +1,11 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcrypt')
+const ObjectId = require('mongodb').ObjectId;
 const jwt = require('jsonwebtoken')
+
 const Schema = mongoose.Schema
+
 const Notification = require('./notification.js')
 
 const userSchema = new Schema({
@@ -39,13 +42,9 @@ const userSchema = new Schema({
   },
   majors: [String],
   tokens: [String],
-  profile_pic: Buffer,
-  notifications: [
-    {
-        type: Schema.Types.Mixed,
-        ref: 'Notification'
-    }
-]
+  notifications: [ObjectId],
+  profile_pic: Buffer
+  
 })
 
 userSchema.pre('save', async function (next) {
