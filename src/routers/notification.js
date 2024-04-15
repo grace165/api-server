@@ -32,4 +32,32 @@ router.post('/notification', auth, async (req, res) => {
     }
 }) 
 
+router.get('/notification', auth, async (req, res) => {
+    let filter = {
+        $and: []
+    }
+
+    const projection = {
+        sender: 1, 
+        receiver: 1,
+        subject: 1,
+        body: 1, 
+        is_read: 1, 
+        notification_type: 1,
+        studyGroupId: 1
+    }
+
+    filter.$and.push({
+        receiver: req.user._id
+    })
+
+    try{
+        const results = await Notification.find(filter, projection)
+        res.send(results)
+    } catch (e){
+        console.log(e)
+        res.status(500).send()
+    }
+})
+
 module.exports = router
